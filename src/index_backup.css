@@ -1,0 +1,372 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* FloatChat Ocean-Inspired Design System - All colors MUST be HSL */
+
+@layer base {
+  :root {
+    /* Ocean Theme Colors */
+    --background: 220 50% 5%;
+    --foreground: 210 100% 95%;
+
+    --card: 220 40% 8%;
+    --card-foreground: 210 100% 95%;
+
+    --popover: 220 40% 8%;
+    --popover-foreground: 210 100% 95%;
+
+    /* Ocean Primary - Deep Ocean Blue */
+    --primary: 210 100% 50%;
+    --primary-foreground: 210 100% 95%;
+    --primary-glow: 195 100% 60%;
+
+    /* Aqua Secondary */
+    --secondary: 190 100% 50%;
+    --secondary-foreground: 220 50% 5%;
+
+    --muted: 220 30% 15%;
+    --muted-foreground: 210 50% 70%;
+
+    /* Neon Accent */
+    --accent: 195 100% 60%;
+    --accent-foreground: 220 50% 5%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 220 30% 20%;
+    --input: 220 30% 15%;
+    --ring: 195 100% 60%;
+
+    --radius: 0.75rem;
+    
+    /* Ocean Gradients */
+    --gradient-ocean: linear-gradient(135deg, hsl(220 100% 20%), hsl(210 100% 40%), hsl(195 100% 50%));
+    --gradient-aqua: linear-gradient(90deg, hsl(210 100% 50%), hsl(195 100% 60%));
+    --gradient-deep: linear-gradient(180deg, hsl(220 50% 5%), hsl(220 80% 8%));
+    --gradient-glow: linear-gradient(135deg, hsl(195 100% 60% / 0.2), hsl(210 100% 50% / 0.2));
+    
+    /* Animations */
+    --transition-smooth: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    
+    /* Glows and Shadows */
+    --shadow-glow: 0 0 30px hsl(195 100% 60% / 0.3);
+    --shadow-glow-intense: 0 0 60px hsl(195 100% 60% / 0.6);
+    --shadow-ocean: 0 20px 40px hsl(220 80% 5% / 0.8);
+    --shadow-float: 0 10px 30px hsl(220 50% 5% / 0.5);
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  /* Light mode - keeping ocean theme consistent */
+  .light {
+    --background: 210 100% 98%;
+    --foreground: 220 50% 10%;
+    --card: 210 100% 95%;
+    --card-foreground: 220 50% 10%;
+    --border: 210 30% 85%;
+    --input: 210 30% 85%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground overflow-x-hidden;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+  
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@layer components {
+  /* Floating Buoy Animation */
+  .buoy {
+    @apply absolute w-8 h-8 opacity-60;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2300D4FF'%3E%3Ccircle cx='12' cy='12' r='8'/%3E%3Ccircle cx='12' cy='8' r='3' fill='%23ffffff'/%3E%3C/svg%3E") no-repeat center/contain;
+    filter: drop-shadow(0 0 10px hsl(195 100% 60% / 0.5));
+  }
+
+  /* Pulsing Marker */
+  .marker {
+    @apply w-4 h-4 rounded-full bg-accent absolute;
+    box-shadow: 0 0 15px hsl(195 100% 60% / 0.8);
+  }
+
+  /* Ocean Wave Background */
+  .ocean-waves {
+    background: linear-gradient(135deg, 
+      hsl(220 100% 20%) 0%, 
+      hsl(210 100% 30%) 25%, 
+      hsl(200 100% 40%) 50%, 
+      hsl(195 100% 50%) 75%, 
+      hsl(190 100% 60%) 100%);
+    background-size: 400% 400%;
+    animation: oceanWave 8s ease-in-out infinite;
+  }
+
+  /* Glowing CTA Button */
+  .cta-glow {
+    @apply px-8 py-4 text-lg font-bold text-white rounded-full cursor-pointer transition-all duration-500;
+    background: var(--gradient-aqua);
+    box-shadow: var(--shadow-glow);
+    border: 1px solid hsl(195 100% 60% / 0.3);
+  }
+  
+  .cta-glow:hover {
+    box-shadow: var(--shadow-glow-intense);
+    transform: translateY(-2px) scale(1.05);
+  }
+
+  /* Feature Card Hover */
+  .feature-card {
+    @apply bg-card/50 backdrop-blur-sm border border-border/50 rounded-xl p-6 transition-all duration-500;
+    box-shadow: var(--shadow-float);
+  }
+  
+  .feature-card:hover {
+    @apply border-accent/50;
+    box-shadow: var(--shadow-glow), var(--shadow-float);
+    transform: translateY(-8px);
+  }
+
+  /* Glowing Text */
+  .glow-text {
+    text-shadow: 0 0 20px hsl(195 100% 60% / 0.5);
+  }
+
+  /* Radial Gradient */
+  .bg-gradient-radial {
+    background: radial-gradient(circle, var(--tw-gradient-stops));
+  }
+
+  /* Chat Window */
+  .chat-window {
+    @apply bg-card/80 backdrop-blur-md border border-border/50 rounded-2xl p-6;
+    box-shadow: var(--shadow-ocean);
+  }
+}
+
+@layer utilities {
+  /* Custom Animations */
+  @keyframes oceanWave {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+  
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-20px); }
+  }
+  
+  @keyframes pulse-glow {
+    0%, 100% { 
+      opacity: 1; 
+      transform: scale(1);
+      box-shadow: 0 0 15px hsl(195 100% 60% / 0.8);
+    }
+    50% { 
+      opacity: 0.6; 
+      transform: scale(1.2);
+      box-shadow: 0 0 25px hsl(195 100% 60% / 1);
+    }
+  }
+  
+  @keyframes slideInUp {
+    from {
+      opacity: 0;
+      transform: translateY(50px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+  
+  .animate-pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+  
+  .animate-slide-up {
+    animation: slideInUp 0.6s ease-out;
+  }
+}
+
+/* Leaflet Map Styles */
+.leaflet-container {
+  font-family: inherit;
+}
+
+.selected-marker {
+  filter: hue-rotate(120deg) brightness(1.2);
+}
+
+.leaflet-popup-content-wrapper {
+  border-radius: 8px;
+}
+
+.leaflet-popup-content {
+  margin: 8px;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground overflow-x-hidden;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+  
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@layer components {
+  /* Floating Buoy Animation */
+  .buoy {
+    @apply absolute w-8 h-8 opacity-60;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2300D4FF'%3E%3Ccircle cx='12' cy='12' r='8'/%3E%3Ccircle cx='12' cy='8' r='3' fill='%23ffffff'/%3E%3C/svg%3E") no-repeat center/contain;
+    filter: drop-shadow(0 0 10px hsl(195 100% 60% / 0.5));
+  }
+
+  /* Pulsing Marker */
+  .marker {
+    @apply w-4 h-4 rounded-full bg-accent absolute;
+    box-shadow: 0 0 15px hsl(195 100% 60% / 0.8);
+  }
+
+  /* Ocean Wave Background */
+  .ocean-waves {
+    background: linear-gradient(135deg, 
+      hsl(220 100% 20%) 0%, 
+      hsl(210 100% 30%) 25%, 
+      hsl(200 100% 40%) 50%, 
+      hsl(195 100% 50%) 75%, 
+      hsl(190 100% 60%) 100%);
+    background-size: 400% 400%;
+    animation: oceanWave 8s ease-in-out infinite;
+  }
+
+  /* Glowing CTA Button */
+  .cta-glow {
+    @apply px-8 py-4 text-lg font-bold text-white rounded-full cursor-pointer transition-all duration-500;
+    background: var(--gradient-aqua);
+    box-shadow: var(--shadow-glow);
+    border: 1px solid hsl(195 100% 60% / 0.3);
+  }
+  
+  .cta-glow:hover {
+    box-shadow: var(--shadow-glow-intense);
+    transform: translateY(-2px) scale(1.05);
+  }
+
+  /* Feature Card Hover */
+  .feature-card {
+    @apply bg-card/50 backdrop-blur-sm border border-border/50 rounded-xl p-6 transition-all duration-500;
+    box-shadow: var(--shadow-float);
+  }
+  
+  .feature-card:hover {
+    @apply border-accent/50;
+    box-shadow: var(--shadow-glow), var(--shadow-float);
+    transform: translateY(-8px);
+  }
+
+  /* Glowing Text */
+  .glow-text {
+    text-shadow: 0 0 20px hsl(195 100% 60% / 0.5);
+  }
+
+  /* Chat Window */
+  .chat-window {
+    @apply bg-card/80 backdrop-blur-md border border-border/50 rounded-2xl p-6;
+    box-shadow: var(--shadow-ocean);
+  }
+}
+
+@layer utilities {
+  /* Custom Animations */
+  @keyframes oceanWave {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+  
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-20px); }
+  }
+  
+  @keyframes pulse-glow {
+    0%, 100% { 
+      opacity: 1; 
+      transform: scale(1);
+      box-shadow: 0 0 15px hsl(195 100% 60% / 0.8);
+    }
+    50% { 
+      opacity: 0.6; 
+      transform: scale(1.2);
+      box-shadow: 0 0 25px hsl(195 100% 60% / 1);
+    }
+  }
+  
+  @keyframes slideInUp {
+    from {
+      opacity: 0;
+      transform: translateY(50px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+  
+  .animate-pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+  
+  .animate-slide-up {
+    animation: slideInUp 0.6s ease-out;
+  }
+}
+
+/* Leaflet Map Styles */
+.leaflet-container {
+  font-family: inherit;
+}
+
+.selected-marker {
+  filter: hue-rotate(120deg) brightness(1.2);
+}
+
+.leaflet-popup-content-wrapper {
+  border-radius: 8px;
+}
+
+.leaflet-popup-content {
+  margin: 8px;
+}
