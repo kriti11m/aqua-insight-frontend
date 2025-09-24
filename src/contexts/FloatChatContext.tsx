@@ -65,7 +65,8 @@ type FloatChatAction =
   | { type: 'CLOSE_VISUALIZATION_PANEL' }
   | { type: 'SET_UPLOADING'; payload: boolean }
   | { type: 'SET_ERROR'; payload: string | null }
-  | { type: 'LOAD_HISTORY_FROM_STORAGE'; payload: ChatHistory[] };
+  | { type: 'LOAD_HISTORY_FROM_STORAGE'; payload: ChatHistory[] }
+  | { type: 'CLEAR_CHAT_HISTORY' };
 
 // Initial state
 const initialState: FloatChatState = {
@@ -199,6 +200,15 @@ const floatChatReducer = (state: FloatChatState, action: FloatChatAction): Float
     
     case 'LOAD_HISTORY_FROM_STORAGE':
       return { ...state, chatHistory: action.payload };
+    
+    case 'CLEAR_CHAT_HISTORY':
+      // Clear localStorage
+      localStorage.removeItem('floatChatHistory');
+      // Reset to initial state
+      return {
+        ...initialState,
+        isOpen: state.isOpen, // Preserve the chat open/closed state
+      };
     
     default:
       return state;

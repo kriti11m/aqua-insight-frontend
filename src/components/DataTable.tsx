@@ -153,8 +153,8 @@ export const DataTable = ({ data, onRowSelect, selectedFloat }: DataTableProps) 
   };
 
   return (
-    <div className="h-full flex flex-col">
-      <CardHeader className="pb-4">
+    <div className="h-full flex flex-col max-h-96">
+      <CardHeader className="pb-4 flex-shrink-0">
         <CardTitle className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Database className="h-5 w-5" />
@@ -166,9 +166,9 @@ export const DataTable = ({ data, onRowSelect, selectedFloat }: DataTableProps) 
         </CardTitle>
       </CardHeader>
 
-      <CardContent className="flex-1 flex flex-col space-y-4">
+      <CardContent className="flex-1 flex flex-col space-y-4 min-h-0">
         {/* Search and Filter Controls */}
-        <div className="flex flex-col sm:flex-row gap-2">
+        <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -193,8 +193,8 @@ export const DataTable = ({ data, onRowSelect, selectedFloat }: DataTableProps) 
         </div>
 
         {/* Data Table */}
-        <div className="flex-1 border rounded-md">
-          <ScrollArea className="h-full">
+        <div className="flex-1 border rounded-md min-h-0">
+          <ScrollArea className="h-full max-h-72">
             <Table>
               <TableHeader>
                 <TableRow>

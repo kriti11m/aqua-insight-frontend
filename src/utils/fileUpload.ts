@@ -22,6 +22,12 @@ export const ALLOWED_TYPES = [
   'text/plain',
 ];
 
+export const NC_FILE_TYPES = [
+  'application/x-netcdf',
+  'application/octet-stream',
+  '.nc'
+];
+
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
 const formatFileSize = (bytes: number): string => {
@@ -193,6 +199,73 @@ export const uploadFile = async (file: File): Promise<FileUploadResult> => {
     return {
       success: false,
       error: `Failed to parse file: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      fileInfo,
+    };
+  }
+};
+
+export const uploadNetCDFFile = async (file: File): Promise<{
+  success: boolean;
+  response?: string;
+  error?: string;
+  fileInfo: {
+    name: string;
+    size: number;
+    type: string;
+  };
+}> => {
+  const fileInfo = {
+    name: file.name,
+    size: file.size,
+    type: file.type,
+  };
+
+  // Validate file type
+  const isNetCDF = file.name.toLowerCase().endsWith('.nc') || 
+                   file.type === 'application/x-netcdf' || 
+                   file.type === 'application/octet-stream';
+  
+  if (!isNetCDF) {
+    return {
+      success: false,
+      error: 'Please select a NetCDF (.nc) file',
+      fileInfo,
+    };
+  }
+
+  // Validate file size
+  if (file.size > MAX_FILE_SIZE) {
+    return {
+      success: false,
+      error: `File size (${formatFileSize(file.size)}) exceeds maximum allowed size (${formatFileSize(MAX_FILE_SIZE)})`,
+      fileInfo,
+    };
+  }
+
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch('https://herein-ads-operating-souls.trycloudflare.com/upload', {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      throw new Error(`Upload failed: ${response.status} ${response.statusText}`);
+    }
+
+    const responseText = await response.text();
+
+    return {
+      success: true,
+      response: responseText,
+      fileInfo,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: `Failed to upload file: ${error instanceof Error ? error.message : 'Unknown error'}`,
       fileInfo,
     };
   }

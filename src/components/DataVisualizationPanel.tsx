@@ -32,44 +32,49 @@ export const DataVisualizationPanel: React.FC<DataVisualizationPanelProps> = ({
 
   // Prepare data for charts
   const depthTempData = floatData.profiles.map(profile => ({
-    depth: profile.depth,
-    temperature: profile.temperature,
+    depth: typeof profile.depth === 'number' ? profile.depth : 0,
+    temperature: typeof profile.temperature === 'number' ? profile.temperature : 0,
   })).sort((a, b) => a.depth - b.depth);
 
   const depthSalinityData = floatData.profiles.map(profile => ({
-    depth: profile.depth,
-    salinity: profile.salinity,
+    depth: typeof profile.depth === 'number' ? profile.depth : 0,
+    salinity: typeof profile.salinity === 'number' ? profile.salinity : 0,
   })).sort((a, b) => a.depth - b.depth);
 
   const timeSeriesData = floatData.profiles.map(profile => ({
     time: new Date(profile.timestamp).getTime(),
-    temperature: profile.temperature,
-    salinity: profile.salinity,
-    depth: profile.depth,
+    temperature: typeof profile.temperature === 'number' ? profile.temperature : 0,
+    salinity: typeof profile.salinity === 'number' ? profile.salinity : 0,
+    depth: typeof profile.depth === 'number' ? profile.depth : 0,
   })).sort((a, b) => a.time - b.time);
 
   // Get unique positions for map
   const positions = floatData.profiles.reduce((acc, profile) => {
-    const key = `${profile.latitude.toFixed(4)}_${profile.longitude.toFixed(4)}`;
+    // Check if coordinates are valid numbers before using toFixed
+    const lat = typeof profile.latitude === 'number' ? profile.latitude : 0;
+    const lng = typeof profile.longitude === 'number' ? profile.longitude : 0;
+    const key = `${lat.toFixed(4)}_${lng.toFixed(4)}`;
     if (!acc[key]) {
       acc[key] = {
-        lat: profile.latitude,
-        lng: profile.longitude,
+        lat: lat,
+        lng: lng,
         count: 1,
-        avgTemp: profile.temperature,
-        avgSalinity: profile.salinity,
+        avgTemp: typeof profile.temperature === 'number' ? profile.temperature : 0,
+        avgSalinity: typeof profile.salinity === 'number' ? profile.salinity : 0,
       };
     } else {
       acc[key].count++;
-      acc[key].avgTemp = (acc[key].avgTemp + profile.temperature) / 2;
-      acc[key].avgSalinity = (acc[key].avgSalinity + profile.salinity) / 2;
+      const temp = typeof profile.temperature === 'number' ? profile.temperature : 0;
+      const sal = typeof profile.salinity === 'number' ? profile.salinity : 0;
+      acc[key].avgTemp = (acc[key].avgTemp + temp) / 2;
+      acc[key].avgSalinity = (acc[key].avgSalinity + sal) / 2;
     }
     return acc;
   }, {} as Record<string, any>);
 
   const mapPositions = Object.values(positions);
-  const centerLat = mapPositions.reduce((sum, pos) => sum + pos.lat, 0) / mapPositions.length;
-  const centerLng = mapPositions.reduce((sum, pos) => sum + pos.lng, 0) / mapPositions.length;
+  const centerLat = mapPositions.length > 0 ? mapPositions.reduce((sum, pos) => sum + pos.lat, 0) / mapPositions.length : 0;
+  const centerLng = mapPositions.length > 0 ? mapPositions.reduce((sum, pos) => sum + pos.lng, 0) / mapPositions.length : 0;
 
   const formatTimeAxis = (tickItem: number) => {
     return new Date(tickItem).toLocaleDateString();

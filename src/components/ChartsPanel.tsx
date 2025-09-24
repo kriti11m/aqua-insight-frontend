@@ -15,6 +15,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { TrendingDown, Thermometer, Droplets, Clock, Download } from "lucide-react";
 import { ChartData } from "@/pages/Dashboard";
 
@@ -207,7 +208,7 @@ export const ChartsPanel = ({ chartData, selectedFloat }: ChartsPanelProps) => {
   };
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col max-h-80 overflow-hidden">
       <CardHeader className="pb-4">
         <CardTitle className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -233,8 +234,8 @@ export const ChartsPanel = ({ chartData, selectedFloat }: ChartsPanelProps) => {
         </CardTitle>
       </CardHeader>
 
-      <CardContent className="flex-1">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full">
+      <CardContent className="flex-1 overflow-hidden">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full max-h-64">
           <TabsList className="grid w-full grid-cols-3 mb-4">
             <TabsTrigger value="depth-temp" className="flex items-center gap-2">
               <Thermometer className="h-4 w-4" />
@@ -253,19 +254,19 @@ export const ChartsPanel = ({ chartData, selectedFloat }: ChartsPanelProps) => {
             </TabsTrigger>
           </TabsList>
 
-          <div className="h-[calc(100%-60px)]">
-            <TabsContent value="depth-temp" className="h-full m-0">
+          <ScrollArea className="h-[280px] w-full">
+            <TabsContent value="depth-temp" className="h-[350px] m-0">
               {renderDepthTempChart()}
             </TabsContent>
 
-            <TabsContent value="depth-salinity" className="h-full m-0">
+            <TabsContent value="depth-salinity" className="h-[350px] m-0">
               {renderDepthSalinityChart()}
             </TabsContent>
 
-            <TabsContent value="time-series" className="h-full m-0">
+            <TabsContent value="time-series" className="h-[350px] m-0">
               {renderTimeSeriesChart()}
             </TabsContent>
-          </div>
+          </ScrollArea>
         </Tabs>
       </CardContent>
     </div>

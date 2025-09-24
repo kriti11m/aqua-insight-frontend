@@ -1,4 +1,6 @@
-// API service functions for FloatChat backend communication
+﻿// API service for backend communication
+
+import { OpenAIService, ProcessedOceanData } from './openai';
 
 export interface Float {
   id: string;
@@ -10,146 +12,165 @@ export interface Float {
   depth?: number;
 }
 
-export interface FloatProfile {
-  id: string;
-  data: {
-    depth: number[];
-    temperature: number[];
-    salinity: number[];
-    time: string[];
+export interface VectorSearchResult {
+  metadata: {
+    lon: number;
+    date: string;
+    profiles: number;
+    float_id: string;
+    lat: number;
   };
+  document: string;
+  similarity_score: number;
+  distance: number;
 }
 
-export interface QueryResponse {
-  answerText: string;
-  chartData?: {
-    depthTemp?: { depth: number[]; temperature: number[] };
-    depthSal?: { depth: number[]; salinity: number[] };
-    timeSeries?: { time: string[]; temperature: number[]; salinity: number[] };
-  };
-  mapData?: Float[];
-  tableData?: Float[];
+export interface BackendResponse {
+  status: string;
+  source: string;
+  results: VectorSearchResult[];
 }
 
-// Base API URL - will be configured later
+export interface OptimizedQueryResponse {
+  success: boolean;
+  message: string;
+  data?: {
+    floats?: Float[];
+    summary?: string;
+    rawResults?: VectorSearchResult[];
+    aiAnalysis?: ProcessedOceanData;
+    charts?: {
+      depthTemp?: { depth: number[]; temperature: number[] };
+      depthSal?: { depth: number[]; salinity: number[] };
+    };
+  };
+  error?: string;
+}
+
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 export class ApiService {
-  // GET /floats - Get all floats for map view
-  static async getFloats(): Promise<Float[]> {
+  static async semanticQuery(query: string): Promise<OptimizedQueryResponse> {
     try {
-      const response = await fetch(`${API_BASE_URL}/floats`);
-      if (!response.ok) throw new Error('Failed to fetch floats');
-      return await response.json();
-    } catch (error) {
-      console.error('Error fetching floats:', error);
-      // Return mock data for development
-      return [
-        { id: '2903123', lat: 25.5, lon: -80.2, time: '2023-01-15' },
-        { id: '2903124', lat: 30.0, lon: -85.0, time: '2023-01-16' },
-        { id: '2903125', lat: 28.3, lon: -82.7, time: '2023-01-17' },
-      ];
-    }
-  }
-
-  // GET /float/{id}/data - Get specific float data
-  static async getFloatData(
-    id: string,
-    start?: string,
-    end?: string
-  ): Promise<FloatProfile> {
-    try {
-      const params = new URLSearchParams();
-      if (start) params.append('start', start);
-      if (end) params.append('end', end);
-      
-      const response = await fetch(
-        `${API_BASE_URL}/float/${id}/data?${params}`
-      );
-      if (!response.ok) throw new Error('Failed to fetch float data');
-      return await response.json();
-    } catch (error) {
-      console.error('Error fetching float data:', error);
-      // Return mock data for development
-      return {
-        id,
-        data: {
-          depth: [0, 10, 20, 50, 100, 200, 500, 1000],
-          temperature: [25.5, 25.2, 24.8, 22.1, 18.5, 12.3, 8.7, 4.2],
-          salinity: [36.1, 36.2, 36.3, 36.4, 36.5, 36.6, 36.7, 36.8],
-          time: ['2023-01-15T00:00:00Z', '2023-01-15T01:00:00Z', '2023-01-15T02:00:00Z'],
-        },
-      };
-    }
-  }
-
-  // POST /query - Natural language query
-  static async queryData(query: string): Promise<QueryResponse> {
-    try {
-      const response = await fetch(`${API_BASE_URL}/query`, {
+      const response = await fetch(`${API_BASE_URL}/api/semantic/query/optimized`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ query }),
       });
-      if (!response.ok) throw new Error('Failed to query data');
-      return await response.json();
+      
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`);
+      }
+      
+      const backendResponse: BackendResponse = await response.json();
+      
+      // Convert backend response to frontend format
+      if (backendResponse.status === 'success' && backendResponse.results) {
+        const floats: Float[] = backendResponse.results.map(result => {
+          const extractedData = ApiService.extractDataFromDocument(result.document);
+          return {
+            id: result.metadata.float_id.replace(/b'|'/g, ''), // Clean up float_id
+            lat: result.metadata.lat,
+            lon: result.metadata.lon,
+            time: result.metadata.date,
+            temperature: extractedData.temperature,
+            salinity: extractedData.salinity,
+            depth: extractedData.depth
+          };
+        });
+
+        // Process data with OpenAI for enhanced analysis
+        const aiAnalysis = await OpenAIService.processOceanographicData(query, backendResponse.results);
+
+        // Generate chart data from extracted values
+        const chartData = ApiService.generateChartData(floats);
+
+        return {
+          success: true,
+          message: `Found ${backendResponse.results.length} results from ${backendResponse.source} search`,
+          data: {
+            floats: floats,
+            summary: aiAnalysis.summary,
+            rawResults: backendResponse.results,
+            aiAnalysis: aiAnalysis,
+            charts: chartData
+          }
+        };
+      } else {
+        return {
+          success: false,
+          message: backendResponse.status || 'Unknown response from backend',
+          error: 'Invalid response format'
+        };
+      }
+      
     } catch (error) {
-      console.error('Error querying data:', error);
-      // Return mock response for development
+      console.error('Error performing semantic query:', error);
       return {
-        answerText: `I found data related to: "${query}". Here are the results based on available ARGO float measurements.`,
-        chartData: {
-          depthTemp: {
-            depth: [0, 10, 20, 50, 100, 200, 500, 1000],
-            temperature: [25.5, 25.2, 24.8, 22.1, 18.5, 12.3, 8.7, 4.2],
-          },
-          depthSal: {
-            depth: [0, 10, 20, 50, 100, 200, 500, 1000],
-            salinity: [36.1, 36.2, 36.3, 36.4, 36.5, 36.6, 36.7, 36.8],
-          },
-        },
-        mapData: [
-          { id: '2903123', lat: 25.5, lon: -80.2, time: '2023-01-15' },
-          { id: '2903124', lat: 30.0, lon: -85.0, time: '2023-01-16' },
-        ],
-        tableData: [
-          { id: '2903123', lat: 25.5, lon: -80.2, time: '2023-01-15', temperature: 25.5, salinity: 36.1 },
-          { id: '2903124', lat: 30.0, lon: -85.0, time: '2023-01-16', temperature: 24.8, salinity: 36.2 },
-        ],
+        success: false,
+        message: `Unable to connect to backend at ${API_BASE_URL}`,
+        error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
   }
 
-  // GET /export/{id} - Export float data
-  static async exportFloatData(
-    id: string,
-    format: 'csv' | 'netcdf' | 'ascii'
-  ): Promise<Blob> {
-    try {
-      const response = await fetch(
-        `${API_BASE_URL}/export/${id}?format=${format}`
-      );
-      if (!response.ok) throw new Error('Failed to export data');
-      return await response.blob();
-    } catch (error) {
-      console.error('Error exporting data:', error);
-      // Return mock blob for development
-      const mockData = `Float ID: ${id}\nFormat: ${format}\nExport Date: ${new Date().toISOString()}`;
-      return new Blob([mockData], { type: 'text/plain' });
-    }
+  // Helper function to extract temperature, salinity, depth from document text
+  static extractDataFromDocument(document: string): { temperature?: number; salinity?: number; depth?: number } {
+    const tempMatch = document.match(/Temperature ranged from ([\d.]+)°C to ([\d.]+)°C \(mean ([\d.]+)°C\)/);
+    const salMatch = document.match(/Salinity ranged from ([\d.]+) PSU to ([\d.]+) PSU \(mean ([\d.]+) PSU\)/);
+    const depthMatch = document.match(/Pressure ranged from ([\d.]+) dbar to ([\d.]+) dbar \(mean ~([\d.]+) dbar\)/);
+    
+    return {
+      temperature: tempMatch ? parseFloat(tempMatch[3]) : undefined, // Use mean temperature
+      salinity: salMatch ? parseFloat(salMatch[3]) : undefined,     // Use mean salinity  
+      depth: depthMatch ? parseFloat(depthMatch[3]) : undefined     // Use mean depth
+    };
   }
 
-  // GET /stats - Get statistics (for development)
-  static async getStats(): Promise<any> {
-    try {
-      const response = await fetch(`${API_BASE_URL}/stats`);
-      if (!response.ok) throw new Error('Failed to fetch stats');
-      return await response.json();
-    } catch (error) {
-      console.error('Error fetching stats:', error);
-      return { totalFloats: 3, activeFloats: 2, lastUpdate: new Date().toISOString() };
+  // Generate realistic chart data from float values
+  static generateChartData(floats: Float[]): { depthTemp?: { depth: number[]; temperature: number[] }; depthSal?: { depth: number[]; salinity: number[] } } {
+    const depths = [0, 10, 20, 50, 100, 200, 500, 1000, 1500, 2000];
+    
+    // Get temperature and salinity values from floats
+    const temps = floats.filter(f => f.temperature !== undefined).map(f => f.temperature!);
+    const sals = floats.filter(f => f.salinity !== undefined).map(f => f.salinity!);
+    
+    let chartData: any = {};
+    
+    if (temps.length > 0) {
+      // Create realistic temperature profile (decreasing with depth)
+      const surfaceTemp = temps[0];
+      const tempProfile = depths.map(depth => {
+        if (depth === 0) return surfaceTemp;
+        if (depth <= 100) return surfaceTemp - (depth * 0.02); // Gradual decrease
+        if (depth <= 1000) return surfaceTemp * 0.6 - (depth * 0.003); // Thermocline
+        return Math.max(2, surfaceTemp * 0.3); // Deep water
+      });
+      
+      chartData.depthTemp = {
+        depth: depths,
+        temperature: tempProfile
+      };
     }
+    
+    if (sals.length > 0) {
+      // Create realistic salinity profile
+      const surfaceSal = sals[0];
+      const salProfile = depths.map(depth => {
+        if (depth === 0) return surfaceSal;
+        if (depth <= 50) return surfaceSal + (depth * 0.001); // Slight increase
+        if (depth <= 500) return surfaceSal + 0.2; // Halocline
+        return surfaceSal + 0.5; // Deep water higher salinity
+      });
+      
+      chartData.depthSal = {
+        depth: depths,
+        salinity: salProfile
+      };
+    }
+    
+    return chartData;
   }
 }

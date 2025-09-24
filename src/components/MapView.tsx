@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { MapContainer, TileLayer, Marker, Popup, Polyline } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from "react-leaflet";
 import { Icon, LatLng } from "leaflet";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -27,13 +27,43 @@ interface MapViewProps {
   onFloatSelect: (floatId: string) => void;
 }
 
+// Component to handle map centering when a float is selected
+function MapCenterHandler({ floats, selectedFloat }: { floats: FloatData[]; selectedFloat: string | null }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (selectedFloat && floats.length > 0) {
+      const float = floats.find(f => f.id === selectedFloat);
+      if (float) {
+        // Smoothly pan to the selected float with appropriate zoom
+        map.setView([float.lat, float.lon], 9, {
+          animate: true,
+          duration: 1.0
+        });
+      }
+    }
+  }, [selectedFloat, floats, map]);
+
+  return null;
+}
+
 export const MapView = ({ floats, selectedFloat, onFloatSelect }: MapViewProps) => {
   const [trajectories, setTrajectories] = useState<{ [key: string]: LatLng[] }>({});
   const [isLoading, setIsLoading] = useState(false);
 
-  // Default center (Gulf of Mexico)
-  const defaultCenter: [number, number] = [25.0, -80.0];
-  const defaultZoom = 6;
+  // Calculate center based on float positions, fallback to Gulf of Mexico
+  const getMapCenter = (): [number, number] => {
+    if (floats.length === 0) {
+      return [25.0, -80.0]; // Default Gulf of Mexico
+    }
+    
+    const avgLat = floats.reduce((sum, float) => sum + float.lat, 0) / floats.length;
+    const avgLon = floats.reduce((sum, float) => sum + float.lon, 0) / floats.length;
+    return [avgLat, avgLon];
+  };
+
+  const defaultCenter = getMapCenter();
+  const defaultZoom = floats.length > 0 ? 7 : 6;
 
   useEffect(() => {
     // Load initial float data if none provided
@@ -45,8 +75,8 @@ export const MapView = ({ floats, selectedFloat, onFloatSelect }: MapViewProps) 
   const loadInitialFloats = async () => {
     setIsLoading(true);
     try {
-      await ApiService.getFloats();
       // In a real implementation, this would update the parent component's state
+      console.log('Loading initial floats...');
     } catch (error) {
       console.error("Error loading initial floats:", error);
     } finally {
@@ -56,7 +86,6 @@ export const MapView = ({ floats, selectedFloat, onFloatSelect }: MapViewProps) 
 
   const loadTrajectory = async (floatId: string) => {
     try {
-      const floatData = await ApiService.getFloatData(floatId);
       // In a real implementation, this would be trajectory data with lat/lon points over time
       // For now, we'll create a mock trajectory
       const mockTrajectory = [
@@ -119,6 +148,7 @@ export const MapView = ({ floats, selectedFloat, onFloatSelect }: MapViewProps) 
             style={{ height: "100%", width: "100%" }}
             className="leaflet-container"
           >
+            <MapCenterHandler floats={floats} selectedFloat={selectedFloat} />
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -142,11 +172,11 @@ export const MapView = ({ floats, selectedFloat, onFloatSelect }: MapViewProps) 
                     <div className="space-y-1 text-sm">
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Latitude:</span>
-                        <span>{float.lat.toFixed(3)}°</span>
+                        <span>{typeof float.lat === 'number' ? float.lat.toFixed(3) : '0.000'}°</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Longitude:</span>
-                        <span>{float.lon.toFixed(3)}°</span>
+                        <span>{typeof float.lon === 'number' ? float.lon.toFixed(3) : '0.000'}°</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Last Update:</span>
@@ -155,13 +185,13 @@ export const MapView = ({ floats, selectedFloat, onFloatSelect }: MapViewProps) 
                       {float.temperature && (
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Temperature:</span>
-                          <span>{float.temperature.toFixed(1)}°C</span>
+                          <span>{typeof float.temperature === 'number' ? float.temperature.toFixed(1) : '0.0'}°C</span>
                         </div>
                       )}
                       {float.salinity && (
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Salinity:</span>
-                          <span>{float.salinity.toFixed(2)} PSU</span>
+                          <span>{typeof float.salinity === 'number' ? float.salinity.toFixed(2) : '0.00'} PSU</span>
                         </div>
                       )}
                     </div>
