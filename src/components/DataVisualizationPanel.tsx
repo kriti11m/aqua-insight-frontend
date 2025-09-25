@@ -1,21 +1,11 @@
 import React from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ScatterChart, Scatter } from 'recharts';
-import { X, ChartLine, Map, Thermometer, Droplets } from 'lucide-react';
+import { X, ChartLine, Globe, Thermometer, Droplets } from 'lucide-react';
 import { FloatData } from '@/contexts/FloatChatContext';
+import { Earth3DGlobe } from '@/components/Earth3DGlobe';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import 'leaflet/dist/leaflet.css';
-import L from 'leaflet';
-
-// Fix for default markers in react-leaflet
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-});
 
 interface DataVisualizationPanelProps {
   floatData: FloatData;
@@ -48,33 +38,7 @@ export const DataVisualizationPanel: React.FC<DataVisualizationPanelProps> = ({
     depth: typeof profile.depth === 'number' ? profile.depth : 0,
   })).sort((a, b) => a.time - b.time);
 
-  // Get unique positions for map
-  const positions = floatData.profiles.reduce((acc, profile) => {
-    // Check if coordinates are valid numbers before using toFixed
-    const lat = typeof profile.latitude === 'number' ? profile.latitude : 0;
-    const lng = typeof profile.longitude === 'number' ? profile.longitude : 0;
-    const key = `${lat.toFixed(4)}_${lng.toFixed(4)}`;
-    if (!acc[key]) {
-      acc[key] = {
-        lat: lat,
-        lng: lng,
-        count: 1,
-        avgTemp: typeof profile.temperature === 'number' ? profile.temperature : 0,
-        avgSalinity: typeof profile.salinity === 'number' ? profile.salinity : 0,
-      };
-    } else {
-      acc[key].count++;
-      const temp = typeof profile.temperature === 'number' ? profile.temperature : 0;
-      const sal = typeof profile.salinity === 'number' ? profile.salinity : 0;
-      acc[key].avgTemp = (acc[key].avgTemp + temp) / 2;
-      acc[key].avgSalinity = (acc[key].avgSalinity + sal) / 2;
-    }
-    return acc;
-  }, {} as Record<string, any>);
-
-  const mapPositions = Object.values(positions);
-  const centerLat = mapPositions.length > 0 ? mapPositions.reduce((sum, pos) => sum + pos.lat, 0) / mapPositions.length : 0;
-  const centerLng = mapPositions.length > 0 ? mapPositions.reduce((sum, pos) => sum + pos.lng, 0) / mapPositions.length : 0;
+  // Using 3D Globe instead of 2D map - no need for positioning calculations
 
   const formatTimeAxis = (tickItem: number) => {
     return new Date(tickItem).toLocaleDateString();
@@ -114,7 +78,7 @@ export const DataVisualizationPanel: React.FC<DataVisualizationPanelProps> = ({
           <Tabs defaultValue="depth-temp" className="w-full">
             <TabsList className="grid w-full grid-cols-2 bg-slate-800">
               <TabsTrigger value="depth-temp" className="text-xs">Profiles</TabsTrigger>
-              <TabsTrigger value="map" className="text-xs">Map</TabsTrigger>
+              <TabsTrigger value="map" className="text-xs">Globe</TabsTrigger>
             </TabsList>
 
             <TabsContent value="depth-temp" className="space-y-4">
@@ -254,34 +218,16 @@ export const DataVisualizationPanel: React.FC<DataVisualizationPanelProps> = ({
               <Card className="bg-slate-800/50 border-slate-600">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm text-white flex items-center space-x-2">
-                    <Map className="w-4 h-4 text-[#00d1c1]" />
-                    <span>Locations</span>
+                    <Globe className="w-4 h-4 text-[#00d1c1]" />
+                    <span>3D Globe Locations</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">
                   <div className="h-80 rounded-lg overflow-hidden">
-                    <MapContainer
-                      center={[centerLat, centerLng]}
-                      zoom={6}
-                      style={{ height: '100%', width: '100%' }}
-                    >
-                      <TileLayer
-                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                      />
-                      {mapPositions.map((position, index) => (
-                        <Marker key={index} position={[position.lat, position.lng]}>
-                          <Popup>
-                            <div className="text-xs">
-                              <p><strong>Location:</strong> {position.lat.toFixed(4)}, {position.lng.toFixed(4)}</p>
-                              <p><strong>Profiles:</strong> {position.count}</p>
-                              <p><strong>Avg Temp:</strong> {position.avgTemp.toFixed(1)}°C</p>
-                              <p><strong>Avg Salinity:</strong> {position.avgSalinity.toFixed(1)} PSU</p>
-                            </div>
-                          </Popup>
-                        </Marker>
-                      ))}
-                    </MapContainer>
+                    <Earth3DGlobe
+                      floatData={[floatData]}
+                      className="w-full h-full"
+                    />
                   </div>
                 </CardContent>
               </Card>

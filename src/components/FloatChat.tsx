@@ -60,8 +60,7 @@ export const FloatChat: React.FC = () => {
             <ChatInterface />
           </div>
 
-          {/* Right Panel - Data Visualization (disabled - using Dashboard instead) */}
-          {/* 
+          {/* Right Panel - Data Visualization with 3D Globe */}
           {state.selectedFloatData && (
             <DataVisualizationPanel
               floatData={state.selectedFloatData}
@@ -69,7 +68,6 @@ export const FloatChat: React.FC = () => {
               onClose={() => dispatch({ type: 'CLOSE_VISUALIZATION_PANEL' })}
             />
           )}
-          */}
         </div>
       </div>
     </div>

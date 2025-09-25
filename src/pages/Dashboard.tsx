@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useFloatChat } from "@/contexts/FloatChatContext";
 import { MapView } from "@/components/MapView";
+import { Earth3DGlobe } from "@/components/Earth3DGlobe";
 import { ChartsPanel } from "@/components/ChartsPanel";
 import { DataTable } from "@/components/DataTable";
 import { ExportPanel } from "@/components/ExportPanel";
@@ -580,84 +581,125 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Main Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">
-          {/* Map View */}
-          <Card className="lg:col-span-1">
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Map className="w-5 h-5" />
-                <span>Float Locations</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="h-64">
-              {floatData.length > 0 ? (
-                <MapView
-                  floats={floatData}
-                  selectedFloat={selectedFloat}
-                  onFloatSelect={handleFloatSelect}
-                />
-              ) : (
-                <div className="flex items-center justify-center h-full text-muted-foreground">
-                  No float data available. Use FloatChat to query for data.
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Charts Section */}
-          <Card className="lg:col-span-1 h-[480px] max-h-[480px] overflow-hidden">
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <BarChart3 className="w-5 h-5" />
-                <span>Data Visualizations</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="h-96 overflow-hidden">
-              {Object.keys(chartData).length > 0 ? (
-                <ChartsPanel
-                  chartData={chartData}
-                  selectedFloat={selectedFloat}
-                />
-              ) : (
-                <div className="flex items-center justify-center h-full text-muted-foreground">
-                  No chart data available. Query for data to see visualizations.
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Data Table */}
-          <div className="xl:col-span-1 lg:col-span-2">
-            {tableData.length > 0 ? (
-              <div className="h-96">
-                <DataTable
-                  data={tableData}
-                  onRowSelect={handleFloatSelect}
-                  selectedFloat={selectedFloat}
-                />
-              </div>
-            ) : (
-              <Card>
-                <CardContent className="h-full">
-                  <div className="flex items-center justify-center h-full text-muted-foreground">
-                    <div className="text-center">
-                      <Database className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                      <p>No data available. Use FloatChat to load oceanographic data.</p>
+        {/* REDESIGNED CLEAN LAYOUT */}
+        <div className="space-y-6">
+          
+          {/* TOP SECTION: Globe and Charts Side by Side */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            
+            {/* Float Locations - Earth Globe */}
+            <Card className="w-full">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center space-x-2 text-lg">
+                  <Map className="w-5 h-5" />
+                  <span>Float Locations</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="h-[500px] w-full">
+                  {floatData.length > 0 ? (
+                    <Earth3DGlobe
+                      floatData={floatData.map(float => ({
+                        id: float.id,
+                        name: `Float ${float.id}`,
+                        profiles: [{
+                          depth: float.depth || 0,
+                          temperature: float.temperature || 0,
+                          salinity: float.salinity || 0,
+                          timestamp: float.time,
+                          latitude: float.lat,
+                          longitude: float.lon
+                        }],
+                        metadata: {
+                          deployment_date: float.time,
+                          platform_id: float.id,
+                          wmo_id: float.id
+                        }
+                      }))}
+                      selectedFloatId={selectedFloat}
+                      onFloatSelect={handleFloatSelect}
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-muted-foreground bg-slate-50 dark:bg-slate-900 rounded-lg">
+                      <div className="text-center p-6">
+                        <Map className="w-16 h-16 mx-auto mb-4 opacity-30" />
+                        <p className="text-lg font-medium mb-2">No Float Data</p>
+                        <p className="text-sm">Use FloatChat to query oceanographic data</p>
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Charts Section */}
+            <Card className="w-full">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center space-x-2 text-lg">
+                  <BarChart3 className="w-5 h-5" />
+                  <span>Data Visualizations</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-4">
+                <div className="h-[450px] w-full">
+                  {Object.keys(chartData).length > 0 ? (
+                    <ChartsPanel
+                      chartData={chartData}
+                      selectedFloat={selectedFloat}
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-muted-foreground bg-slate-50 dark:bg-slate-900 rounded-lg">
+                      <div className="text-center p-6">
+                        <BarChart3 className="w-16 h-16 mx-auto mb-4 opacity-30" />
+                        <p className="text-lg font-medium mb-2">No Chart Data</p>
+                        <p className="text-sm">Query data to see visualizations</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
-          {/* Export Panel */}
-          <Card className="lg:col-span-2 xl:col-span-3">
+          {/* BOTTOM SECTION: Data Table Full Width */}
+          <Card className="w-full">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center space-x-2 text-lg">
+                <Database className="w-5 h-5" />
+                <span>Data Table</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-4">
+              {tableData.length > 0 ? (
+                <div className="h-[400px] w-full overflow-auto">
+                  <DataTable
+                    data={tableData}
+                    onRowSelect={handleFloatSelect}
+                    selectedFloat={selectedFloat}
+                  />
+                </div>
+              ) : (
+                <div className="h-[200px] w-full">
+                  <div className="flex items-center justify-center h-full text-muted-foreground bg-slate-50 dark:bg-slate-900 rounded-lg">
+                    <div className="text-center p-6">
+                      <Database className="w-16 h-16 mx-auto mb-4 opacity-30" />
+                      <p className="text-lg font-medium mb-2">No Data Available</p>
+                      <p className="text-sm">Use FloatChat to load oceanographic data</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* EXPORT SECTION */}
+          <Card className="w-full">
             <ExportPanel
               selectedFloat={selectedFloat}
               data={tableData}
             />
           </Card>
+          
         </div>
 
         {/* Usage Instructions */}
